@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Time Complexities Demo (Multiple N)</title>
+  <style>
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    table, th, td {
+      border: 1px solid black;
+    }
+    th, td {
+      padding: 10px;
+      text-align: center;
+    }
+    input {
+      margin: 10px 0;
+    }
+    ul {
+      list-style-type: none;
+      padding: 0;
+    }
+  </style>
+</head>
+<body>
+  <h1>Time Complexities Demo</h1>
+
+  <label for="numElements">Number of Elements (N):</label>
+  <input type="number" id="numElements" placeholder="Enter a number" />
+  <button id="addElements">Add Elements</button>
+  <button id="start">Start</button>
+
+  <h2>Elements List</h2>
+  <ul id="elementsList"></ul>
+
+  <table id="timeTable">
+    <thead>
+      <tr>
+        <th>Serial No.</th>
+        <th>N</th>
+        <th>O(1) (ms)</th>
+        <th>O(log N) (ms)</th>
+        <th>O(N) (ms)</th>
+        <th>O(N log N) (ms)</th>
+        <th>O(N^2) (ms)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- Rows will be inserted dynamically -->
+    </tbody>
+  </table>
+
+  <script>
+    class TimeComplexitiesDemo {
+      constructor(N) {
+        this.N = N;
+        // Create an array from 0..N-1
+        this.array = Array.from({ length: N }, (_, i) => i);
+      }
+
+      // O(1)
+      getFirstElement() {
+        return this.array[0];
+      }
+
+      // O(log N)
+      binarySearch(target) {
+        let low = 0,
+            high = this.array.length - 1;
+        while (low <= high) {
+          const mid = Math.floor((low + high) / 2);
+          if (this.array[mid] === target) {
+            return mid;
+          } else if (this.array[mid] < target) {
+            low = mid + 1;
+          } else {
+            high = mid - 1;
+          }
+        }
+        return -1;
+      }
+
+      // O(N)
+      linearSum() {
+        let sum = 0;
+        for (let i = 0; i < this.array.length; i++) {
+          sum += this.array[i];
+        }
+        return sum;
+      }
+
+      // O(N log N) – e.g. built-in sort
+      sortArray() {
+        return [...this.array].sort((a, b) => a - b);
+      }
+
+      // O(N^2) – e.g. Bubble Sort
+      bubbleSort() {
+        const copy = [...this.array];
+        for (let i = 0; i < copy.length; i++) {
+          for (let j = 0; j < copy.length - i - 1; j++) {
+            if (copy[j] > copy[j + 1]) {
+              [copy[j], copy[j + 1]] = [copy[j + 1], copy[j]];
+            }
+          }
+        }
+        return copy;
+      }
+
+      // Helper to measure how long a function takes (in ms)
+      async measureTime(fn, ...args) {
+        const start = performance.now();
+        await fn.apply(this, args);
+        const end = performance.now();
+        return (end - start).toFixed(2);
+      }
+    }
+
+    // Array to keep track of multiple N values
+    let Nvalues = [];
+    const elementsList = document.getElementById("elementsList");
+
+    // Attach event listeners
+    document.getElementById("addElements").addEventListener("click", addValue);
+    document
+      .getElementById("numElements")
+      .addEventListener("keypress", (event) => {
+        if (event.key === "Enter") {
+          addValue();
+        }
+      });
+
+    function addValue() {
+      const numElements = parseInt(document.getElementById("numElements").value);
+      if (!isNaN(numElements) && numElements > 0) {
+        // Store the value
+        Nvalues.push(numElements);
+
+        // Display in the <ul>
+        const li = document.createElement("li");
+        li.textContent = numElements;
+        elementsList.appendChild(li);
+      } else {
+        alert("Please enter a valid positive number for N.");
+      }
+    }
+
+    // When "Start" is clicked, measure times for each N
+    document.getElementById("start").addEventListener("click", async () => {
+      const tbody = document.querySelector("#timeTable tbody");
+      // Clear old rows (if any)
+      tbody.innerHTML = "";
+
+      if (Nvalues.length === 0) {
+        alert("Please add at least one N value first.");
+        return;
+      }
+
+      // For each N, measure complexities and create a row
+      for (let i = 0; i < Nvalues.length; i++) {
+        const N = Nvalues[i];
+        const demo = new TimeComplexitiesDemo(N);
+
+        const timeO1      = await demo.measureTime(demo.getFirstElement);
+        const timeLogN    = await demo.measureTime(demo.binarySearch, N - 1);
+        const timeN       = await demo.measureTime(demo.linearSum);
+        const timeNlogN   = await demo.measureTime(demo.sortArray);
+        const timeN2      = await demo.measureTime(demo.bubbleSort);
+
+        // Create a new row
+        const row = document.createElement("tr");
+
+        // Serial No.
+        const cellSerial = document.createElement("td");
+        cellSerial.textContent = i + 1;
+        row.appendChild(cellSerial);
+
+        // N
+        const cellN = document.createElement("td");
+        cellN.textContent = N;
+        row.appendChild(cellN);
+
+        // O(1) time
+        const cellO1 = document.createElement("td");
+        cellO1.textContent = timeO1;
+        row.appendChild(cellO1);
+
+        // O(log N) time
+        const cellLogN = document.createElement("td");
+        cellLogN.textContent = timeLogN;
+        row.appendChild(cellLogN);
+
+        // O(N) time
+        const cellNN = document.createElement("td");
+        cellNN.textContent = timeN;
+        row.appendChild(cellNN);
+
+        // O(N log N) time
+        const cellNlogN = document.createElement("td");
+        cellNlogN.textContent = timeNlogN;
+        row.appendChild(cellNlogN);
+
+        // O(N^2) time
+        const cellN2 = document.createElement("td");
+        cellN2.textContent = timeN2;
+        row.appendChild(cellN2);
+
+        // Add the row to the table body
+        tbody.appendChild(row);
+      }
+    });
+  </script>
+</body>
+</html>
