@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Space Complexities Demo (Counting Elements)</title>
+  <style>
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    table, th, td {
+      border: 1px solid black;
+    }
+    th, td {
+      padding: 10px;
+      text-align: center;
+    }
+    input {
+      margin: 10px 0;
+    }
+    ul {
+      list-style-type: none;
+      padding: 0;
+    }
+  </style>
+</head>
+<body>
+  <h1>Space Complexities Demo (Approx. Counting)</h1>
+
+  <label for="numElements">Number of Elements (N):</label>
+  <input type="number" id="numElements" placeholder="Enter a number" />
+  <button id="addElements">Add Elements</button>
+  <button id="start">Start</button>
+
+  <h2>Elements List</h2>
+  <ul id="elementsList"></ul>
+
+  <table id="spaceTable">
+    <thead>
+      <tr>
+        <th>Serial No.</th>
+        <th>N</th>
+        <th>O(1)</th>
+        <th>O(log N)</th>
+        <th>O(N)</th>
+        <th>O(N log N)</th>
+        <th>O(N^2)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- Rows dynamically inserted -->
+    </tbody>
+  </table>
+
+  <script>
+    // We'll assume each "item" is ~8 bytes (just for demonstration).
+    const BYTES_PER_ITEM = 8;
+
+    class SpaceComplexitiesDemo {
+      constructor(N) {
+        this.N = N;
+        
+        // We'll store references here to avoid immediate GC.
+        this.o1Ref = null;
+        this.olognRef = null;
+        this.onRef = null;
+        this.onlognRef = null;
+        this.on2Ref = null;
+      }
+
+      /**
+       * O(1) space: We create a single small array with 1 element (or a single variable).
+       * Return the total number of elements allocated.
+       */
+      spaceO1() {
+        this.o1Ref = [0]; // 1 element
+        return 1;
+      }
+
+      /**
+       * O(log N) space: Allocate an array of length ~ log2(N).
+       */
+      spaceOlogN() {
+        const size = Math.max(1, Math.floor(Math.log2(this.N)));
+        this.olognRef = new Array(size).fill(0);
+        return size;
+      }
+
+      /**
+       * O(N) space: Allocate an array of length N.
+       */
+      spaceON() {
+        const arr = new Array(this.N).fill(0);
+        this.onRef = arr;
+        return this.N;
+      }
+
+      /**
+       * O(N log N) space: Allocate ~ N * log2(N) elements.
+       */
+      spaceONlogN() {
+        const size = Math.max(1, Math.floor(this.N * Math.log2(this.N)));
+        this.onlognRef = new Array(size).fill(0);
+        return size;
+      }
+
+      /**
+       * O(N^2) space: Create a 2D array of size N*N.
+       */
+      spaceON2() {
+        const arr2D = [];
+        for (let i = 0; i < this.N; i++) {
+          arr2D[i] = new Array(this.N).fill(0);
+        }
+        this.on2Ref = arr2D;
+        return this.N * this.N;
+      }
+    }
+
+    // Keep track of multiple N values
+    let Nvalues = [];
+    const elementsList = document.getElementById("elementsList");
+
+    // Add the N value to the list
+    document.getElementById("addElements").addEventListener("click", addValue);
+    document
+      .getElementById("numElements")
+      .addEventListener("keypress", (evt) => {
+        if (evt.key === "Enter") {
+          addValue();
+        }
+      });
+
+    function addValue() {
+      const numElements = parseInt(document.getElementById("numElements").value);
+      if (!isNaN(numElements) && numElements > 0) {
+        // Add to array
+        Nvalues.push(numElements);
+
+        // Display in the list
+        const li = document.createElement("li");
+        li.textContent = numElements;
+        elementsList.appendChild(li);
+      } else {
+        alert("Please enter a valid positive number for N.");
+      }
+    }
+
+    // When "Start" is clicked, measure space usage for each N
+    document.getElementById("start").addEventListener("click", () => {
+      // Clear old table rows (if any)
+      const tbody = document.querySelector("#spaceTable tbody");
+      tbody.innerHTML = "";
+
+      if (Nvalues.length === 0) {
+        alert("Please add at least one N value first.");
+        return;
+      }
+
+      // For each N, measure complexities and create a row in the table
+      Nvalues.forEach((N, index) => {
+        const demo = new SpaceComplexitiesDemo(N);
+
+        // For each complexity, get the number of allocated elements.
+        const o1Count     = demo.spaceO1();
+        const oLogNCount  = demo.spaceOlogN();
+        const oNCount     = demo.spaceON();
+        const oNlogNCount = demo.spaceONlogN();
+        const oN2Count    = demo.spaceON2();
+
+        // Convert to approximate bytes
+        const o1Bytes     = o1Count     * BYTES_PER_ITEM;
+        const oLogNBytes  = oLogNCount  * BYTES_PER_ITEM;
+        const oNBytes     = oNCount     * BYTES_PER_ITEM;
+        const oNlogNBytes = oNlogNCount * BYTES_PER_ITEM;
+        const oN2Bytes    = oN2Count    * BYTES_PER_ITEM;
+
+        // Create a new row
+        const row = document.createElement("tr");
+
+        // 1) Serial No.
+        const cellSerial = document.createElement("td");
+        cellSerial.textContent = index + 1;
+        row.appendChild(cellSerial);
+
+        // 2) N
+        const cellN = document.createElement("td");
+        cellN.textContent = N;
+        row.appendChild(cellN);
+
+        // 3) O(1) bytes
+        const cellO1 = document.createElement("td");
+        cellO1.textContent = `${o1Bytes} bytes`;
+        row.appendChild(cellO1);
+
+        // 4) O(log N) bytes
+        const cellOlogN = document.createElement("td");
+        cellOlogN.textContent = `${oLogNBytes} bytes`;
+        row.appendChild(cellOlogN);
+
+        // 5) O(N) bytes
+        const cellON = document.createElement("td");
+        cellON.textContent = `${oNBytes} bytes`;
+        row.appendChild(cellON);
+
+        // 6) O(N log N) bytes
+        const cellONlogN = document.createElement("td");
+        cellONlogN.textContent = `${oNlogNBytes} bytes`;
+        row.appendChild(cellONlogN);
+
+        // 7) O(N^2) bytes
+        const cellON2 = document.createElement("td");
+        cellON2.textContent = `${oN2Bytes} bytes`;
+        row.appendChild(cellON2);
+
+        // Add row to table body
+        tbody.appendChild(row);
+      });
+    });
+  </script>
+</body>
+</html>
